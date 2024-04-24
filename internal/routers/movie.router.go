@@ -2,6 +2,7 @@ package routers
 
 import (
 	"biFebriansyah/back/internal/handlers"
+	"biFebriansyah/back/internal/middleware"
 	"biFebriansyah/back/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,9 @@ func movie(g *gin.Engine, d *sqlx.DB) {
 	repo := repository.NewMovie(d)
 	handler := handlers.NewMovie(repo)
 
-	route.GET("/", handler.GetMovie)
-	route.POST("/", handler.PostMovie)
+	route.POST("/", middleware.UploadFile, handler.PostData)
+	route.PATCH("/", middleware.UploadFile, handler.PatchData)
+	route.DELETE("/:id", handler.RemoveData)
+	route.GET("/", handler.FetchData)
+	route.GET("/all", handler.FetchAllData)
 }

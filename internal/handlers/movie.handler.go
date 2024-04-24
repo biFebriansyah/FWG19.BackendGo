@@ -1,38 +1,103 @@
 package handlers
 
 import (
+	"biFebriansyah/back/config"
 	"biFebriansyah/back/internal/models"
 	"biFebriansyah/back/internal/repository"
+	"biFebriansyah/back/pkg"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type HandlerMovie struct {
-	*repository.RepoMovie
+	repository.RepoMovieIF
 }
 
-func NewMovie(r *repository.RepoMovie) *HandlerMovie {
+func NewMovie(r repository.RepoMovieIF) *HandlerMovie {
 	return &HandlerMovie{r}
 }
 
-func (h *HandlerMovie) GetMovie(ctx *gin.Context) {
-	ctx.String(200, "hello worlds")
-}
-
-func (h *HandlerMovie) PostMovie(ctx *gin.Context) {
-	var movie models.Movie
+func (h *HandlerMovie) PostData(ctx *gin.Context) {
+	movie := models.Movie{}
 
 	if err := ctx.ShouldBind(&movie); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	result, err := h.CreateMovie(&movie)
+	movie.Movie_banner = ctx.MustGet("image").(string)
+	respone, err := h.CreateMovie(&movie)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	ctx.JSON(200, result)
+	ctx.JSON(200, respone)
+
+}
+
+func (h *HandlerMovie) PatchData(ctx *gin.Context) {
+	movie := models.Movie{}
+
+	if err := ctx.ShouldBind(&movie); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	movie.Movie_banner = ctx.MustGet("image").(string)
+	respone, err := h.UpdateMovie(&movie)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(200, respone)
+
+}
+
+func (h *HandlerMovie) RemoveData(ctx *gin.Context) {
+	idMovie := ctx.Param("id")
+	data, err := h.RemoveMovie(idMovie)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(200, data)
+}
+
+func (h *HandlerMovie) FetchAllData(ctx *gin.Context) {
+	data, err := h.GetAllMovie()
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	pkg.NewRes(200, data).Send(ctx)
+}
+
+func (h *HandlerMovie) FetchData(ctx *gin.Context) {
+	name := ctx.Query("name")
+	page := ctx.DefaultQuery("page", "1")
+	limit := ctx.DefaultQuery("limit", "10")
+
+	pg, _ := strconv.Atoi(page)
+	lm, _ := strconv.Atoi(limit)
+
+	data, err := h.GetMovie(models.Meta{
+		Name:  name,
+		Page:  pg,
+		Limit: lm,
+	})
+
+	if err != nil {
+		pkg.NewRes(http.StatusBadRequest, &config.Result{
+			Data: err.Error(),
+		}).Send(ctx)
+		return
+	}
+
+	pkg.NewRes(200, data).Send(ctx)
 }
