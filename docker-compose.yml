@@ -1,0 +1,14 @@
+services:
+    backend:
+        image: bukanebi/goback:2
+        ports:
+            - '8084:8081'
+        environment:
+            - DB_HOST=pglocal
+        networks:
+            - gonet
+
+networks:
+    gonet:
+        name: 'devnet'
+        external: true
